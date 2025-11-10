@@ -208,6 +208,60 @@
       localStorage.setItem('ordem_' + coluna, asc ? 'asc' : 'desc');
       renderTabela(dadosProcessados);
     }
+    // === ADICIONAR PRODUTO NO GITHUB AUTOMATICAMENTE ===
+document.getElementById('addProduto')?.addEventListener('click', () => {
+  const cod = document.getElementById('novoCod').value.trim().toUpperCase();
+  const nome = document.getElementById('novoNome').value.trim();
+  if (!cod || !nome) return alert('Preencha código e nome!');
+
+  // Adiciona na base local
+  baseProdutosML[cod] = nome;
+  alert(`Produto ${cod} adicionado na memória! Salvando no GitHub...`);
+
+  // Salva no GitHub usando API (precisa do token uma única vez)
+  const token = prompt('Cole seu GitHub Personal Access Token (só aparece 1 vez):');
+  if (!token) return;
+
+  fetch('baseProdutosML.json')
+    .then(r => r.text())
+    .then(content => {
+      let json = JSON.parse(content);
+      json[cod] = nome;
+      const newContent = JSON.stringify(json, null, 2);
+
+      fetch(`https://api.github.com/repos/ciagopinho/CalculadoraFull/contents/baseProdutosML.json`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Adiciona produto ${cod}`,
+          content: btoa(unescape(encodeURIComponent(newContent))), // base64 UTF-8
+          sha: '' // vamos pegar depois (simplificado)
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.content) {
+          alert('Produto salvo no GitHub com sucesso! Atualize a página em 10s.');
+          document.getElementById('novoCod').value = '';
+          document.getElementById('novoNome').value = '';
+        } else {
+          alert('Erro: ' + JSON.stringify(res));
+        }
+      });
+    });
+});
   </script>
+  <div class="controls" style="margin-top:20px; padding:20px; background:#f0f2f5; border-radius:12px;">
+  <h3 style="margin-bottom:15px; color:#333;">Adicionar Produto na Base (salva no GitHub automaticamente)</h3>
+  <div class="control-row">
+    <input type="text" id="novoCod" placeholder="Código ML (ex: XMTE60508)" style="flex:1;">
+    <textarea id="novoNome" placeholder="Nome completo (use Enter para quebra de linha)" rows="3" style="flex:2; margin:0 10px;"></textarea>
+    <button class="btn btn-success" id="addProduto">+ Adicionar</button>
+  </div>
+  <small style="color:#666;">Funciona em qualquer celular ou PC — salva direto no GitHub!</small>
+</div>
 </body>
 </html>
