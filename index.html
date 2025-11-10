@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora FULL - Mercado Livre</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    /* ... todo o CSS que você já tem ... */
+    * {margin:0;padding:0;box-sizing:border-box;}
+    body {font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px;}
+    .container {max-width:1600px;margin:0 auto;background:white;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;}
+    .header {background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:30px;text-align:center;}
+    .header h1 {font-size:2.5em;margin-bottom:10px;}
+    .header p {font-size:1.1em;opacity:0.9;}
+    .controls {padding:30px;background:#f8f9fa;border-bottom:2px solid #e9ecef;}
+    .control-row {display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap;}
+    .control-group {flex:1;min-width:200px;}
+    .control-group label {display:block;margin-bottom:8px;font-weight:600;color:#495057;}
+    .control-group input,.control-group select {width:100%;padding:12px;border:2px solid #dee2e6;border-radius:8px;font-size:1em;transition:all 0.3s;}
+    .control-group input:focus,.control-group select:focus {outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1);}
+    .file-upload {position:relative;overflow:hidden;display:inline-block;width:100%;}
+    .file-upload input[type=file]{position:absolute;opacity:0;cursor:pointer;width:100%;height:100%;}
+    .file-upload-btn {background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:12px 24px;border-radius:8px;cursor:pointer;text-align:center;font-weight:600;transition:transform 0.2s;display:block;}
+    .file-upload-btn:hover {transform:translateY(-2px);}
+    .btn {padding:12px 24px;border:none;border-radius:8px;font-size:1em;font-weight:600;cursor:pointer;transition:all 0.3s;}
+    .btn-success {background:#28a745;color:white;}
+    .btn-success:hover {background:#218838;transform:translateY(-2px);}
+    .table-container {padding:30px;overflow-x:auto;}
+    table {width:100%;border-collapse:collapse;font-size:0.9em;}
+    thead {background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;position:sticky;top:0;z-index:10;}
+    th {padding:15px 10px;text-align:left;font-weight:600;white-space:nowrap;cursor:pointer;}
+    td {padding:12px 10px;border-bottom:1px solid #dee2e6;}
+    tbody tr:hover {background:#f8f9fa;}
+    .produto-col {text-align:left; line-height:1.5; font-size:0.95em;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Calculadora FULL - Mercado Livre</h1>
+      <p>Gestão inteligente de estoque e reposição</p>
+    </div>
+
+    <div class="controls">
+      <div class="control-row">
+        <div class="control-group">
+          <label>Importar Relatório do ML</label>
+          <div class="file-upload">
+            <div class="file-upload-btn" id="fileLabel">Selecionar arquivo (CSV ou XLSX)</div>
+            <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" />
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Data da Coleta</label>
+          <input type="date" id="dataColeta" />
+        </div>
+        <div class="control-group">
+          <label>Cobertura Desejada (dias)</label>
+          <input type="number" id="coberturaDesejada" value="15" min="1" />
+        </div>
+        <div class="control-group" style="display:flex;align-items:flex-end;">
+          <button class="btn btn-success" id="gerarDados" style="width:100%;">Gerar Dados</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <div id="tableContainer">Carregando base de produtos...</div>
+    </div>
+  </div>
+
+  <script>
+    let baseProdutosML = {};
+    let dadosUpload = [];
+    let dadosProcessados = [];
+
+    // CARREGA O JSON SEPARADO AUTOMATICAMENTE
+    fetch('baseProdutosML.json')
+      .then(response => {
+        if (!response.ok) throw new Error('Arquivo baseProdutosML.json não encontrado');
+        return response.json();
+      })
+      .then(data => {
+        baseProdutosML = data;
+        document.getElementById('tableContainer').innerHTML = 'Base carregada! Faça upload do relatório do ML.';
+        console.log(`Base carregada: ${Object.keys(baseProdutosML).length} produtos`);
+      })
+      .catch(err => {
+        document.getElementById('tableContainer').innerHTML = `<p style="color:red;">ERRO: ${err.message}<br>Verifique se o arquivo <strong>baseProdutosML.json</strong> está na mesma pasta do index.html</p>`;
+        console.error(err);
+      });
+
+    // ... resto do código exatamente como antes (upload, processamento, etc.) ...
+
+    document.getElementById('fileLabel').addEventListener('click', () => document.getElementById('fileInput').click());
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        document.getElementById('fileLabel').textContent = file.name;
+        carregarArquivo(file);
+      }
+    });
+
+    function carregarArquivo(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'csv') {
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: r => { dadosUpload = r.data; alert('Arquivo carregado! Clique em Gerar Dados.'); },
+          error: e => alert('Erro CSV: ' + e.message)
+        });
+      } else if (ext === 'xlsx' || ext === 'xls') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type: 'array' });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+          const headerIndex = rows.findIndex(r => r.some(cell => typeof cell === 'string' && cell.toLowerCase().includes('código ml')));
+          if (headerIndex === -1) { alert('Cabeçalho "Código ML" não encontrado'); return; }
+          const headers = rows[headerIndex];
+          const dataRows = rows.slice(headerIndex + 1);
+          const json = dataRows.map(row => {
+            const obj = {};
+            headers.forEach((h, i) => { obj[h.trim()] = row[i]; });
+            return obj;
+          });
+          dadosUpload = json;
+          alert('Planilha carregada! Clique em Gerar Dados.');
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    }
+
+    document.getElementById('gerarDados').addEventListener('click', () => {
+      if (dadosUpload.length === 0) return alert('Carregue um relatório primeiro');
+      if (Object.keys(baseProdutosML).length === 0) return alert('Base de produtos ainda não carregou');
+      processarDados(dadosUpload);
+    });
+
+    function processarDados(dados) {
+      const dataColeta = new Date(document.getElementById('dataColeta').value || new Date());
+      const hoje = new Date();
+      const diasAteColeta = Math.ceil((dataColeta - hoje) / (1000 * 60 * 60 * 24));
+      const coberturaDesejada = parseInt(document.getElementById('coberturaDesejada').value);
+
+      dadosProcessados = dados.map(row => {
+        const codigoML = row['Código ML'] || row['Codigo ML'] || '';
+        const produtoNome = baseProdutosML[codigoML] || 'Produto não encontrado';
+
+        const vendasUlt30 = parseFloat(row['Unidades vendidas \nÚlt. 30 días'] || row['Unidades vendidas Últ. 30 días'] || 0);
+        const unidadesAptas = parseFloat(row['Unidades aptas'] || 0);
+        const unidadesCaminho = parseFloat(row['Unidades a caminho'] || 0);
+        const estoqueAtual = unidadesAptas + unidadesCaminho;
+        const vendasPorDia = vendasUlt30 / 30;
+        const demandaAteDisp = vendasPorDia * diasAteColeta;
+        const estoqueProjetado = estoqueAtual - demandaAteDisp;
+        const qtdeEnviar = Math.max(0, Math.ceil((vendasPorDia * coberturaDesejada) - estoqueProjetado));
+
+        return { ...row, produtoNome, qtdeEnviar, vendasUlt30, unidadesAptas, unidadesCaminho };
+      });
+
+      renderTabela(dadosProcessados);
+    }
+
+    function renderTabela(dados) {
+      let html = `<table><thead><tr>
+        <th onclick="ordenarTabela('qtdeEnviar')">Qtd. a Enviar</th>
+        <th onclick="ordenarTabela('Código ML')">Código ML</th>
+        <th onclick="ordenarTabela('produtoNome')">Produto</th>
+        <th onclick="ordenarTabela('Tamanho')">Tamanho</th>
+        <th>Unidades Aptas</th>
+        <th>Unidades a Caminho</th>
+        <th onclick="ordenarTabela('vendasUlt30')">Vendas 30d</th>
+      </tr></thead><tbody>`;
+
+      dados.forEach(item => {
+        const nomeFormatado = (item.produtoNome || 'Produto não encontrado')
+          .replace(/\\n/g, '<br>')
+          .replace(/\n/g, '<br>');
+
+        html += `<tr>
+          <td><strong style='color:#667eea;'>${item.qtdeEnviar}</strong></td>
+          <td>${item['Código ML'] || item['Codigo ML'] || ''}</td>
+          <td class="produto-col">${nomeFormatado}</td>
+          <td>${item['Tamanho'] || ''}</td>
+          <td>${item.unidadesAptas}</td>
+          <td>${item.unidadesCaminho}</td>
+          <td>${item.vendasUlt30}</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      document.getElementById('tableContainer').innerHTML = html;
+    }
+
+    function ordenarTabela(coluna) {
+      const asc = localStorage.getItem('ordem_' + coluna) !== 'asc';
+      dadosProcessados.sort((a, b) => {
+        let A = a[coluna] || a[coluna.toLowerCase()] || '';
+        let B = b[coluna] || b[coluna.toLowerCase()] || '';
+        if (!isNaN(A) && !isNaN(B)) return asc ? A - B : B - A;
+        return asc ? A.toString().localeCompare(B) : B.toString().localeCompare(A);
+      });
+      localStorage.setItem('ordem_' + coluna, asc ? 'asc' : 'desc');
+      renderTabela(dadosProcessados);
+    }
+  </script>
+</body>
+</html>
