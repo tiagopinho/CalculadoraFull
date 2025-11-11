@@ -7,7 +7,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    /* ... todo o CSS que você já tem ... */
     * {margin:0;padding:0;box-sizing:border-box;}
     body {font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px;}
     .container {max-width:1600px;margin:0 auto;background:white;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;}
@@ -18,8 +17,8 @@
     .control-row {display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap;}
     .control-group {flex:1;min-width:200px;}
     .control-group label {display:block;margin-bottom:8px;font-weight:600;color:#495057;}
-    .control-group input,.control-group select {width:100%;padding:12px;border:2px solid #dee2e6;border-radius:8px;font-size:1em;transition:all 0.3s;}
-    .control-group input:focus,.control-group select:focus {outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1);}
+    .control-group input,.control-group select,.control-group textarea {width:100%;padding:12px;border:2px solid #dee2e6;border-radius:8px;font-size:1em;transition:all 0.3s;}
+    .control-group input:focus,.control-group select:focus,.control-group textarea:focus {outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1);}
     .file-upload {position:relative;overflow:hidden;display:inline-block;width:100%;}
     .file-upload input[type=file]{position:absolute;opacity:0;cursor:pointer;width:100%;height:100%;}
     .file-upload-btn {background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:12px 24px;border-radius:8px;cursor:pointer;text-align:center;font-weight:600;transition:transform 0.2s;display:block;}
@@ -43,6 +42,7 @@
       <p>Gestão inteligente de estoque e reposição</p>
     </div>
 
+    <!-- CONTROLES PRINCIPAIS -->
     <div class="controls">
       <div class="control-row">
         <div class="control-group">
@@ -66,6 +66,30 @@
       </div>
     </div>
 
+    <!-- NOVA SEÇÃO DE ADICIONAR PRODUTO -->
+    <div class="controls" style="background:#e8f5e9; border-top:3px solid #4caf50;">
+      <h3 style="margin-bottom:15px; color:#2e7d32;">➕ Adicionar Produto na Base</h3>
+      <div class="control-row">
+        <div class="control-group">
+          <label>Código ML</label>
+          <input type="text" id="novoCod" placeholder="Ex: XMTE60508" style="text-transform:uppercase;">
+        </div>
+        <div class="control-group" style="flex:2;">
+          <label>Nome do Produto</label>
+          <textarea id="novoNome" placeholder="Nome completo (use Enter para quebra de linha)" rows="2"></textarea>
+        </div>
+        <div class="control-group" style="display:flex;align-items:flex-end;">
+          <button class="btn" id="addProduto" style="width:100%; background:#4caf50; color:white;">
+            💾 Salvar no GitHub
+          </button>
+        </div>
+      </div>
+      <small style="color:#666; display:block; margin-top:10px;">
+        ℹ️ O produto será salvo permanentemente no arquivo <strong>baseProdutosML.json</strong> do GitHub.
+      </small>
+    </div>
+
+    <!-- TABELA DE RESULTADOS -->
     <div class="table-container">
       <div id="tableContainer">Carregando base de produtos...</div>
     </div>
@@ -76,7 +100,7 @@
     let dadosUpload = [];
     let dadosProcessados = [];
 
-    // CARREGA O JSON SEPARADO AUTOMATICAMENTE
+    // Carrega o JSON da base
     fetch('baseProdutosML.json')
       .then(response => {
         if (!response.ok) throw new Error('Arquivo baseProdutosML.json não encontrado');
@@ -88,12 +112,11 @@
         console.log(`Base carregada: ${Object.keys(baseProdutosML).length} produtos`);
       })
       .catch(err => {
-        document.getElementById('tableContainer').innerHTML = `<p style="color:red;">ERRO: ${err.message}<br>Verifique se o arquivo <strong>baseProdutosML.json</strong> está na mesma pasta do index.html</p>`;
+        document.getElementById('tableContainer').innerHTML = `<p style="color:red;">ERRO: ${err.message}</p>`;
         console.error(err);
       });
 
-    // ... resto do código exatamente como antes (upload, processamento, etc.) ...
-
+    // Upload
     document.getElementById('fileLabel').addEventListener('click', () => document.getElementById('fileInput').click());
     document.getElementById('fileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
@@ -137,7 +160,7 @@
 
     document.getElementById('gerarDados').addEventListener('click', () => {
       if (dadosUpload.length === 0) return alert('Carregue um relatório primeiro');
-      if (Object.keys(baseProdutosML).length === 0) return alert('Base de produtos ainda não carregou');
+      if (Object.keys(baseProdutosML).length === 0) return alert('Base ainda não carregou');
       processarDados(dadosUpload);
     });
 
@@ -150,8 +173,7 @@
       dadosProcessados = dados.map(row => {
         const codigoML = row['Código ML'] || row['Codigo ML'] || '';
         const produtoNome = baseProdutosML[codigoML] || 'Produto não encontrado';
-
-        const vendasUlt30 = parseFloat(row['Unidades vendidas \nÚlt. 30 días'] || row['Unidades vendidas Últ. 30 días'] || 0);
+        const vendasUlt30 = parseFloat(row['Unidades vendidas Últ. 30 días'] || 0);
         const unidadesAptas = parseFloat(row['Unidades aptas'] || 0);
         const unidadesCaminho = parseFloat(row['Unidades a caminho'] || 0);
         const estoqueAtual = unidadesAptas + unidadesCaminho;
@@ -159,7 +181,6 @@
         const demandaAteDisp = vendasPorDia * diasAteColeta;
         const estoqueProjetado = estoqueAtual - demandaAteDisp;
         const qtdeEnviar = Math.max(0, Math.ceil((vendasPorDia * coberturaDesejada) - estoqueProjetado));
-
         return { ...row, produtoNome, qtdeEnviar, vendasUlt30, unidadesAptas, unidadesCaminho };
       });
 
@@ -168,23 +189,14 @@
 
     function renderTabela(dados) {
       let html = `<table><thead><tr>
-        <th onclick="ordenarTabela('qtdeEnviar')">Qtd. a Enviar</th>
-        <th onclick="ordenarTabela('Código ML')">Código ML</th>
-        <th onclick="ordenarTabela('produtoNome')">Produto</th>
-        <th onclick="ordenarTabela('Tamanho')">Tamanho</th>
-        <th>Unidades Aptas</th>
-        <th>Unidades a Caminho</th>
-        <th onclick="ordenarTabela('vendasUlt30')">Vendas 30d</th>
+        <th>Qtd. a Enviar</th><th>Código ML</th><th>Produto</th><th>Tamanho</th>
+        <th>Unidades Aptas</th><th>Unidades a Caminho</th><th>Vendas 30d</th>
       </tr></thead><tbody>`;
-
       dados.forEach(item => {
-        const nomeFormatado = (item.produtoNome || 'Produto não encontrado')
-          .replace(/\\n/g, '<br>')
-          .replace(/\n/g, '<br>');
-
+        const nomeFormatado = (item.produtoNome || '').replace(/\n/g, '<br>');
         html += `<tr>
           <td><strong style='color:#667eea;'>${item.qtdeEnviar}</strong></td>
-          <td>${item['Código ML'] || item['Codigo ML'] || ''}</td>
+          <td>${item['Código ML'] || ''}</td>
           <td class="produto-col">${nomeFormatado}</td>
           <td>${item['Tamanho'] || ''}</td>
           <td>${item.unidadesAptas}</td>
@@ -192,76 +204,62 @@
           <td>${item.vendasUlt30}</td>
         </tr>`;
       });
-
       html += '</tbody></table>';
       document.getElementById('tableContainer').innerHTML = html;
     }
 
-    function ordenarTabela(coluna) {
-      const asc = localStorage.getItem('ordem_' + coluna) !== 'asc';
-      dadosProcessados.sort((a, b) => {
-        let A = a[coluna] || a[coluna.toLowerCase()] || '';
-        let B = b[coluna] || b[coluna.toLowerCase()] || '';
-        if (!isNaN(A) && !isNaN(B)) return asc ? A - B : B - A;
-        return asc ? A.toString().localeCompare(B) : B.toString().localeCompare(A);
-      });
-      localStorage.setItem('ordem_' + coluna, asc ? 'asc' : 'desc');
-      renderTabela(dadosProcessados);
-    }
-    // === ADICIONAR PRODUTO NO GITHUB AUTOMATICAMENTE ===
-document.getElementById('addProduto')?.addEventListener('click', () => {
-  const cod = document.getElementById('novoCod').value.trim().toUpperCase();
-  const nome = document.getElementById('novoNome').value.trim();
-  if (!cod || !nome) return alert('Preencha código e nome!');
+    // === SALVAR DIRETO NO GITHUB ===
+    document.getElementById('addProduto').addEventListener('click', async () => {
+      const cod = document.getElementById('novoCod').value.trim().toUpperCase();
+      const nome = document.getElementById('novoNome').value.trim();
+      if (!cod || !nome) return alert('Preencha código e nome!');
+      baseProdutosML[cod] = nome;
 
-  // Adiciona na base local
-  baseProdutosML[cod] = nome;
-  alert(`Produto ${cod} adicionado na memória! Salvando no GitHub...`);
+      let token = localStorage.getItem('github_token');
+      if (!token) {
+        token = prompt('Cole seu GitHub Personal Access Token (só aparece uma vez):');
+        if (token) localStorage.setItem('github_token', token);
+        else return alert('Token não informado.');
+      }
 
-  // Salva no GitHub usando API (precisa do token uma única vez)
-  const token = prompt('Cole seu GitHub Personal Access Token (só aparece 1 vez):');
-  if (!token) return;
+      // Buscar o SHA atual
+      const repo = 'ciagopinho/CalculadoraFull';
+      const filePath = 'baseProdutosML.json';
+      const apiUrl = `https://api.github.com/repos/${repo}/contents/${filePath}`;
 
-  fetch('baseProdutosML.json')
-    .then(r => r.text())
-    .then(content => {
-      let json = JSON.parse(content);
-      json[cod] = nome;
-      const newContent = JSON.stringify(json, null, 2);
+      try {
+        const shaResponse = await fetch(apiUrl, {
+          headers: { Authorization: `token ${token}` }
+        });
+        const shaData = await shaResponse.json();
+        const sha = shaData.sha;
 
-      fetch(`https://api.github.com/repos/ciagopinho/CalculadoraFull/contents/baseProdutosML.json`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: `Adiciona produto ${cod}`,
-          content: btoa(unescape(encodeURIComponent(newContent))), // base64 UTF-8
-          sha: '' // vamos pegar depois (simplificado)
-        })
-      })
-      .then(r => r.json())
-      .then(res => {
-        if (res.content) {
-          alert('Produto salvo no GitHub com sucesso! Atualize a página em 10s.');
+        const newContent = JSON.stringify(baseProdutosML, null, 2);
+        const updateResponse = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            Authorization: `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Adiciona produto ${cod}`,
+            content: btoa(unescape(encodeURIComponent(newContent))),
+            sha
+          })
+        });
+
+        if (updateResponse.ok) {
+          alert(`✅ Produto ${cod} salvo no GitHub com sucesso!`);
           document.getElementById('novoCod').value = '';
           document.getElementById('novoNome').value = '';
         } else {
-          alert('Erro: ' + JSON.stringify(res));
+          const err = await updateResponse.json();
+          alert('Erro ao salvar: ' + JSON.stringify(err));
         }
-      });
+      } catch (e) {
+        alert('Erro de conexão: ' + e.message);
+      }
     });
-});
   </script>
-  <div class="controls" style="margin-top:20px; padding:20px; background:#f0f2f5; border-radius:12px;">
-  <h3 style="margin-bottom:15px; color:#333;">Adicionar Produto na Base (salva no GitHub automaticamente)</h3>
-  <div class="control-row">
-    <input type="text" id="novoCod" placeholder="Código ML (ex: XMTE60508)" style="flex:1;">
-    <textarea id="novoNome" placeholder="Nome completo (use Enter para quebra de linha)" rows="3" style="flex:2; margin:0 10px;"></textarea>
-    <button class="btn btn-success" id="addProduto">+ Adicionar</button>
-  </div>
-  <small style="color:#666;">Funciona em qualquer celular ou PC — salva direto no GitHub!</small>
-</div>
 </body>
 </html>
