@@ -217,15 +217,9 @@
 }
 function ordenarTabela(coluna) {
   const asc = localStorage.getItem('ordem_' + coluna) !== 'asc';
-  window.dadosAtuais.sort((a, b) => {
-    let A = a[coluna] ?? '';
-    let B = b[coluna] ?? '';
-    if (!isNaN(A) && !isNaN(B)) return asc ? A - B : B - A;
-    return asc ? A.toString().localeCompare(B) : B.toString().localeCompare(A);
-  });
+  window.dadosAtuais.sort((a, b) => { ... });
   localStorage.setItem('ordem_' + coluna, asc ? 'asc' : 'desc');
   renderTabela(window.dadosAtuais);
-}
 
   // === adiciona as setinhas no cabeçalho ativo ===
   document.querySelectorAll('th').forEach(th => {
