@@ -214,7 +214,7 @@
   html += '</tbody></table>';
   window.dadosAtuais = dados;
   document.getElementById('tableContainer').innerHTML = html;
-
+}
 function ordenarTabela(coluna) {
   const asc = localStorage.getItem('ordem_' + coluna) !== 'asc';
   window.dadosAtuais.sort((a, b) => {
