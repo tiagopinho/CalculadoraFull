@@ -190,11 +190,11 @@
     function renderTabela(dados) {
       let html = `<table><thead><tr>
         <th onclick="ordenarTabela('qtdeEnviar')">Qtd. a Enviar</th>
-        <th>Código ML</th>
-        <th>Produto</th>
+        <th onclick="ordenarTabela('Código ML')">Código ML</th>
+        <th onclick="ordenarTabela('produtoNome')">Produto</th>
         <th onclick="ordenarTabela('Tamanho')">Tamanho</th>
-        <th>Unidades Aptas</th>
-        <th>Unidades a Caminho</th>
+        <th onclick="ordenarTabela('unidadesAptas')">Unidades Aptas</th>
+        <th onclick="ordenarTabela('unidadesCaminho')">Unidades a Caminho</th>
         <th onclick="ordenarTabela('vendasUlt30')">Vendas 30d</th>
       </tr></thead><tbody>`;
 
@@ -227,9 +227,13 @@ function ordenarTabela(coluna) {
   renderTabela(window.dadosAtuais);
 
   // === adiciona as setinhas no cabeçalho ativo ===
-  document.querySelectorAll('th').forEach(th => {
-    th.innerHTML = th.innerHTML.replace(/ ▲| ▼/g, '');
-  });
+  const ths = document.querySelectorAll('thead th');
+ths.forEach((th, index) => {
+  const colunas = ['qtdeEnviar', 'Código ML', 'produtoNome', 'Tamanho', 'unidadesAptas', 'unidadesCaminho', 'vendasUlt30'];
+  if (colunas[index] === coluna) {
+    th.innerHTML += asc ? ' ▲' : ' ▼';
+  }
+});
 
   const thAtivo = Array.from(document.querySelectorAll('th')).find(th =>
     th.textContent.includes(coluna.replace(/([A-Z])/g, ' $1').trim())
