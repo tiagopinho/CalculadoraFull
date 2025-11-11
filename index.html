@@ -189,14 +189,14 @@
 
     function renderTabela(dados) {
   let html = `<table><thead><tr>
-    <th onclick="ordenarTabela('qtdeEnviar')">Qtd. a Enviar</th>
-    <th onclick="ordenarTabela('Código ML')">Código ML</th>
-    <th onclick="ordenarTabela('produtoNome')">Produto</th>
-    <th onclick="ordenarTabela('Tamanho')">Tamanho</th>
-    <th>Unidades Aptas</th>
-    <th>Unidades a Caminho</th>
-    <th onclick="ordenarTabela('vendasUlt30')">Vendas 30d</th>
-  </tr></thead><tbody>`;
+  <th onclick="ordenarTabela('qtdeEnviar')">Qtd. a Enviar</th>
+  <th>Código ML</th>
+  <th>Produto</th>
+  <th onclick="ordenarTabela('Tamanho')">Tamanho</th>
+  <th>Unidades Aptas</th>
+  <th>Unidades a Caminho</th>
+  <th onclick="ordenarTabela('vendasUlt30')">Vendas 30d</th>
+</tr></thead><tbody>`;
 
   dados.forEach(item => {
     const nomeFormatado = (item.produtoNome || '').replace(/\n/g, '<br>');
