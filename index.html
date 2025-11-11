@@ -188,15 +188,15 @@
     }
 
     function renderTabela(dados) {
-  let html = `<table><thead><tr>
-  <th onclick="ordenarTabela('qtdeEnviar')">Qtd. a Enviar</th>
-  <th>Código ML</th>
-  <th>Produto</th>
-  <th onclick="ordenarTabela('Tamanho')">Tamanho</th>
-  <th>Unidades Aptas</th>
-  <th>Unidades a Caminho</th>
-  <th onclick="ordenarTabela('vendasUlt30')">Vendas 30d</th>
-</tr></thead><tbody>`;
+      let html = `<table><thead><tr>
+        <th onclick="ordenarTabela('qtdeEnviar')">Qtd. a Enviar</th>
+        <th>Código ML</th>
+        <th>Produto</th>
+        <th onclick="ordenarTabela('Tamanho')">Tamanho</th>
+        <th>Unidades Aptas</th>
+        <th>Unidades a Caminho</th>
+        <th onclick="ordenarTabela('vendasUlt30')">Vendas 30d</th>
+      </tr></thead><tbody>`;
 
   dados.forEach(item => {
     const nomeFormatado = (item.produtoNome || '').replace(/\n/g, '<br>');
@@ -218,8 +218,8 @@
 function ordenarTabela(coluna) {
   const asc = localStorage.getItem('ordem_' + coluna) !== 'asc';
   dadosProcessados.sort((a, b) => {
-    let A = a[coluna] || a[coluna.toLowerCase()] || '';
-    let B = b[coluna] || b[coluna.toLowerCase()] || '';
+    let A = a[coluna] ?? '';
+    let B = b[coluna] ?? '';
     if (!isNaN(A) && !isNaN(B)) return asc ? A - B : B - A;
     return asc ? A.toString().localeCompare(B) : B.toString().localeCompare(A);
   });
