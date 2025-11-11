@@ -215,6 +215,30 @@
   document.getElementById('tableContainer').innerHTML = html;
 }
 
+function ordenarTabela(coluna) {
+  const asc = localStorage.getItem('ordem_' + coluna) !== 'asc';
+  dadosProcessados.sort((a, b) => {
+    let A = a[coluna] || a[coluna.toLowerCase()] || '';
+    let B = b[coluna] || b[coluna.toLowerCase()] || '';
+    if (!isNaN(A) && !isNaN(B)) return asc ? A - B : B - A;
+    return asc ? A.toString().localeCompare(B) : B.toString().localeCompare(A);
+  });
+  localStorage.setItem('ordem_' + coluna, asc ? 'asc' : 'desc');
+  renderTabela(dadosProcessados);
+
+  // === adiciona as setinhas no cabeçalho ativo ===
+  document.querySelectorAll('th').forEach(th => {
+    th.innerHTML = th.innerHTML.replace(/ ▲| ▼/g, '');
+  });
+
+  const thAtivo = Array.from(document.querySelectorAll('th')).find(th =>
+    th.textContent.includes(coluna.replace(/([A-Z])/g, ' $1').trim())
+  );
+
+  if (thAtivo) {
+    thAtivo.innerHTML += asc ? ' ▲' : ' ▼';
+  }
+}
 
     // === SALVAR DIRETO NO GITHUB ===
     document.getElementById('addProduto').addEventListener('click', async () => {
