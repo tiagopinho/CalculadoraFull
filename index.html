@@ -173,7 +173,7 @@
       dadosProcessados = dados.map(row => {
         const codigoML = row['Código ML'] || row['Codigo ML'] || '';
         const produtoNome = baseProdutosML[codigoML] || 'Produto não encontrado';
-        const vendasUlt30 = parseFloat(row['Unidades vendidas Últ. 30 días'] || 0);
+        const vendasUlt30 = parseFloat(row['Unidades vendidas Últ. 30 días'] || row['Unidades vendidas Ult. 30 dias'] || 0);
         const unidadesAptas = parseFloat(row['Unidades aptas'] || 0);
         const unidadesCaminho = parseFloat(row['Unidades a caminho'] || 0);
         const estoqueAtual = unidadesAptas + unidadesCaminho;
